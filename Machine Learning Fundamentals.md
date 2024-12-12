@@ -188,4 +188,315 @@ Workflow for architecture devlopment:
 - Regularization: This modifies the objective function that we minimize by adding addiontal terms that penalize any large weights. Basically, change the objective function so that it becomes Error + $\lambda*f(\theta)$ where f($\theta$) gets larger as theta becomes larger. Lambda is the regularization strength, a new hyperparameter. The value chosen affects how strongly we want to mitigate overfitting. At a value of $\lambda = 0$ then we do not want to take any measures against overfitting. If lambda is too large, then our model will prioritize keeping theta too small instead of finding the values that will truly perform well. 
 
 The common type of regularization is L2 regularization. This involves augmenting the error function with the squared magnitude of all weights in the neural network. For every weight w in the neural network, we add $\frac{1}{2}*\lambda*w^2$ to the error function. 
+This encourages the network to use all of the inputs a little rather than only using some a lot. It is often also called weight decay because the gradient descent goes linearly to 0.
+![[Pasted image 20241212130912.png]]
+You can see how lamda values can solve overfitting. In the first $\lambda$ is small enough that the model evidently overfits. 
+
+Another type is L1 regularization, where $\lambda*|w|$ is added for each weight. This typically leads to a neuron ignoring many inputs, and only focusing on a small subset of the inputs. This can be useful if you want to see what inputs contribute to a decision. L2 almost always better
+
+-- Max norm constraints -- Same goal of reducing theta so it does not become too large. These force an upper bound on the weight of every neuron, using projected gradient to enforce this constraint. After a gradient descent step is performed, the new weight is compared to a radius c. If it is greater than c, the vector is projected onto the ball with the radius c. 
+
+Dropout: A neuron is active with some probability p, and if it is zero it is inactive. This forces the network to be accurate in the absence of certain information by preventing it from becoming too dependent on any certain neuron. 
+![[Pasted image 20241212132959.png]]
+
+
+## Chapter 5: Implementing Neural Networks in PyTorch
+
+### PyTorch Tensors:
+- Tensors are the primary structure where numerical information is stored/manipulated. 
+	- Tensors can be thought of as a generalization of 2d matrices and 1d arrays and are capable of storing multidimensional data(example: batchers of 3 channel images)
+		- The data storage in the example would be 4 dimensions, so an index could be present for each individual image
+- Capable of using dimensions past the 4d space, but uncommon.
+- Tensors are universal. They represent the input to models, the weight layers within the models, and the output of the models. Any standard operation like addition, multiplication, inversion and more can be run on tensors.
+
+#### Tensors Initialization:
+1. The first way to initialize tensors is with simple lists or numerical primitives:
+```python
+arr = [1,2]
+tensor = torch.tensor(arr)
+val = 2.0
+tensor = torch.tensor(val)```
+2. They can also be initialized from numpy arrays:
+```python
+import numpy as np
+np_arr = np.array([1,2])
+x_t = torch.from_numpy(np_arr)
+```
+3. Finally, through PyTorch functions themselves
+```python
+zeros_t = torch.zeros((2,3))
+ones_t = torch.ones((2,3))
+rand_t = torch.randn((2,3))
+```
+
+#### Tensor Attributes:
+- The dimensionality in init 3 is the same as the number of indices in the tupple.
+	- The shape attribute allows us to get the dimensionality of a tensor: tensor.shape
+- Data type being stored. Floats, complex #'s, integers, booleans
+	- torch.dtype
+- Device attribute: tensor.device gives the device it is being run on (type='cpu') by default
+	- If GPU available use CUDA so much faster
+- The .to function allows us to modify an attribute inthe tensor, like data type.
+
+#### Tensor Operations:
+1. Multiplying a tensor by a scalar 
+```python
+c = 10
+x_t = x_t*c #underscore t will be a tensor from here on out
+```
+2. Adding/Subtracting two tensors:
+```python
+x1_t = torch.zeros((1,2))
+x2_t = torch.ones((1,2))
+x1_t + x2_t 
+```
+These still adhere to the same rules for matrix addition, the tenors are the same dimension. If they are not, and the inputs are broadcastable, they will be broadcasted. Check pytorch docs for more info
+3. Tensor Multiplication. For dimensionalities less than or equal to 2, it is identical to matrix and vector multiplication. But it also works on higher dimensions as well. Imagine two tensors, one of shape (2,1,2) and another of shape (2,2,2). The first tensor can be thought of as a list of length two, where each value in the list is a 1x2 matrix. The second is a list of length two where each value in the list is a 2x2 matrix. The product of these two tensors is a length two list where index i is the product of first tensor index i and the second tensor index i. 
+	![[Pasted image 20241212143205.png]] 
+	Visualization of the example described. 
+	This shows how 3d tensors can be multiplied
+Generalizing this to four dimensions, it can be thought of similarly. Instead of a list of matrices, the 4d tensor is like a 2d array (a grid) of matrices. The (i,j)-th index is the matrix product of the same index in the two 4d input tensors that are being multiplied
+This can be represented as $P_{i,j,x,z} = \Sigma _yA_{i,j,x,y}*B_{i,j,x,y}$
+To perform this multiplication, use the matmul function. Also, note that the procedure for the 3d/4d arrays can work in any dimensionality as long as the two input tensors follow the constraints. Broadcasting also works here. 
+Broadcasting: Essentially, broadcasting is the process by which tensors can be automatically expanded to equal sizes in order to perform operations. 
+```python
+# matmul example
+x1_t = torch.tensor([1,2],[3,4])
+x2_t = torch.tensor([1,2,3],[4,5,6])
+torch.matmul(x1_t, x2_t)
+```
+4. Tensor indexing is similar to any other list, also similar to numpy
+```python
+i,j,k = 0,1,1
+x3_t = torch.tensor([[[3,7,9],[2,4,5]],[[8,6,2],[3,9,1]]])
+print(x3_t)
+# out:
+	# tensor([[[3, 7, 9],
+	# [2, 4, 5]],
+	# [[8, 6, 2],
+	# [3, 9, 1]]])
+x3_t[i,j,k]
+# out:
+	# tensor(4)
+
+# To get a larger portion: (the two lines below are logically equivalent)
+x3_t[0] # Returns the matrix at position 0 in tensor
+x3_t[0,:,:] # Also returns the matrix at position 0 in tensor!
+# ':' usage is similar to standard python.
+# out:
+	# tensor([[3, 7, 9],
+	# [2, 4, 1]])
+```
+
+### Gradients in PyTorch:
+- Recall partial derivatives. 
+If a function took in three inputs, like $f(x,y,z)= x^2+y^2+z^2$ then the gradient would be 
+$g = [2x 2y 2z]$ 
+In pytorch this might look like:
+```python
+x = torch.tensor(2.0, requires_grad=True)
+y = torch.tensor(3.0, requires_grad=True)
+z = torch.tensor(1.5, requires_grad=True)
+f = x**2 + y**2 + z**2
+f.backward()
+x.grad, y.grad, z.grad
+#would print (tensor(4.), tensor(6.), tensor(3.))
+```
+In a neural network, instead of getting the partial derivative of x for the gradient, we instead represent the neural network as f(x,$\theta$) . Then we compute the gradient of the loss of f with respect to theta. Then, adjustments can be made based on the gradient until a proper theta is found.  
+
+### The PyTorch nn Module:
+- Simply import with 'import torch.nn as nn'
+ A simple initialization for a feed forward neural network might look like:
+```python
+in_dim, out_dim = 256, 10
+vec = torch.randn(256)
+layer = nn.Linear(in_dim, out_dim, bias=True)
+out = layer(vec)
+```
+The code creates a single layer with bias in a feedforward neural network. It takes in a vector with dimension 256 and outputs a vector with dimension 10.
+A feedforward neural network in pytorch is just a composition of layers. 
+example:
+```python
+in_dim, feature_dim, out_dim = 784, 256, 10
+vec = torch.randn(784)
+layer1 = nn.Linear(in_dim, feature_dim, bias=True)
+layer2 = nn.Linear(feature_dim, out_dim, bias=True)
+out = layer2(layer1(vec))
+
+#nonlinearity:
+relu = nn.ReLU()
+out = layer2(relu(layer1(vec)))
+
+```
+However this is still linear, and as discussed earlier in the notes, we want nonlinearity to be supported. 
+The nn module also have ReLU and tanh. 
+
+nn.module class is the basis for all neural networks in pytorch.
+Building on the exapmle earlier:
+```python
+class BaseClassifier(nn.Module):
+	def __init__(self, in_dim, feature_dim, out_dim):
+		super(BaseClassifier,self).__init__()
+		self.layer1 = nn.Linear(in_dim, feature_dim, bias=True)
+		self.layer2 = nn.Linear(feature_dim, out_dim, bias=True)
+		self.relu = nn.ReLU()
+
+	def forward(self, x):
+		x = self.layer1(x)
+		x = self.relu(x)
+		out = self.layer2(x)
+		return out
+```
+Use of this model might look like:
+```python
+no_examples = 10
+in_dim, feature_dim, out_dim = 784, 256, 10
+x = torch.randn((no_examples,in_dim))
+classifier = BaseClassifier(in_dim, feature_dim, out_dim)
+out = classifier(x) ## this calls the forward function
+```
+Training a module requires a loss metric. This can be done in pytorch with nn as well:
+```python
+loss = nn.CrossEntropyLoss()
+target = torch.tensor([0,3,2,8,2,9,3,7,1,6])
+computed_loss = loss(out, target)
+computed_loss.backward()
+```
+The torch.optim module gives us an optimizer module to determine the best optimizer. It updates the parameters for us as well
+```python
+from torch import optim
+lr = 1e-3
+optimizer = optim.SGD(classifier.parameters(), lr=lr)
+##creates optimizer that can update parameters
+optimizer.step() # Perform the SGD and update the parameters 
+optmizer.zero_grad() # 0 out gradients between minibatches
+## Updates the parameters of classifier through SGD
+```
+
+### PyTorch Datasets and Dataloaders:
+- The pytorch dataset is a class that allows us to access our data. 
+- An example dataset for the MNIST dataset of handwritten numbers is:
+```python
+import os
+from PIL import Image
+from torchvision import transforms
+
+class ImageDataset(Dataset):
+	def __init__(self, img_dir, label_file):
+		super(ImageDataset, self).__init__()
+		self.img_dir = img_dir 
+		self.labels = torch.tensor(np.load(label_file, allow_pickle=True))
+		self.transforms = transforms.ToTensor()
+
+	def __get__item(self, idx):
+		img_pth = os.path.join(self.img_dir, "img_{}.jpg".format(idx))
+		img = Image.open(img_pth)
+		label = self.labels[idx]
+		return {"data": img, "label": label}
+
+	def __len__(self):
+		return len(self.labels)
+```
+This gets images from a dataset following the naming convention img-idx.png with idx being the index. Also assumes ground-truth labels are in a numpy array that can be indexed with idx to find image labels. 
+
+- The dataloader module takes in a dataset instance, like the one above, and automatically loads the dataset into the minibatch and shuffles the dataset between epochs. 
+```python
+train_dataset = ImageDataset(img_dir='./data/train/', label_file='./data/train/labels.npy')
+train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+
+for minibatch in train_loader:
+	data, labels = minibatch['data'], minibatch['label']
+	out = classifier(data)
+	print(data)
+	print(labels)
+
+```
+
+
+### MNIST Classifier in PyTorch:
+```python
+import matplotlib.pyplot as plt
+import torch
+from torch import optim
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+from torchvision.datasets import MNIST
+from torchvision.transforms import ToTensor
+
+class BaseClassifier(nn.Module):
+ def __init__(self, in_dim, feature_dim, out_dim):
+ super(BaseClassifier, self).__init__()
+ self.classifier = nn.Sequential(
+ nn.Linear(in_dim, feature_dim, bias=True),
+ nn.ReLU(),
+ nn.Linear(feature_dim, out_dim, bias=True)
+ )
+
+ def forward(self, x):
+ return self.classifier(x)
+# Load in MNIST dataset from PyTorch
+train_dataset = MNIST(".", train=True,
+ download=True, transform=ToTensor())
+test_dataset = MNIST(".", train=False,
+ download=True, transform=ToTensor())
+train_loader = DataLoader(train_dataset,
+ batch_size=64, shuffle=True)
+test_loader = DataLoader(test_dataset,
+ batch_size=64, shuffle=False)
+
+# Instantiate model, optimizer, and hyperparameter(s)
+in_dim, feature_dim, out_dim = 784, 256, 10
+lr=1e-3
+loss_fn = nn.CrossEntropyLoss()
+epochs=40
+classifier = BaseClassifier(in_dim, feature_dim, out_dim)
+optimizer = optim.SGD(classifier.parameters(), lr=lr)
+def train(classifier=classifier,
+ optimizer=optimizer,
+ epochs=epochs,
+ loss_fn=loss_fn):
+ classifier.train()
+ loss_lt = []
+ for epoch in range(epochs):
+	 running_loss = 0.0
+ for minibatch in train_loader:
+	 data, target = minibatch
+	 data = data.flatten(start_dim=1)
+	 out = classifier(data)
+	 computed_loss = loss_fn(out, target)
+	 computed_loss.backward()
+	 optimizer.step()
+	 optimizer.zero_grad()
+	 # Keep track of sum of loss of each minibatch
+	 running_loss += computed_loss.item()
+ loss_lt.append(running_loss/len(train_loader))
+ print("Epoch: {} train loss: {}".format(epoch+1,
+ running_loss/len(train_loader)))
+ plt.plot([i for i in range(1,epochs+1)], loss_lt)
+ plt.xlabel("Epoch")
+ plt.ylabel("Training Loss")
+ plt.title(
+ "MNIST Training Loss: optimizer {}, lr {}".format("SGD",
+lr))
+ plt.show()
+ # Save state to file as checkpoint
+ torch.save(classifier.state_dict(), 'mnist.pt')
+def test(classifier=classifier,
+	 loss_fn = loss_fn):
+	 classifier.eval()
+	 accuracy = 0.0
+	 computed_loss = 0.0
+ with torch.no_grad():
+	 for data, target in test_loader:
+		 data = data.flatten(start_dim=1)
+		 out = classifier(data)
+		 _, preds = out.max(dim=1)
+		 # Get loss and accuracy
+		 computed_loss += loss_fn(out, target)
+		 accuracy += torch.sum(preds==target)
+
+	 print("Test loss: {}, test accuracy: {}".format(
+		 computed_loss.item()/(len(test_loader)*64),
+		 accuracy*100.0/(len(test_loader)*64)))
+```
 
