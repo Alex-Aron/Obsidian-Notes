@@ -77,7 +77,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "a63e9c01f4db18ac",
@@ -175,10 +176,17 @@
   },
   "active": "78b03c3ebb445cd4",
   "lastOpenFiles": [
-    "Pasted image 20241211133906.png",
-    "Pasted image 20241211131738.png",
-    "Pasted image 20241211122011.png",
-    "Pasted image 20241211121834.png",
+    "Pasted image 20241211211814.png",
+    "Pasted image 20241211210410.png",
+    "Pasted image 20241211204853.png",
+    "Pasted image 20241211204642.png",
+    "Pasted image 20241211202925.png",
+    "Pasted image 20241211202854.png",
+    "Pasted image 20241211202600.png",
+    "Pasted image 20241211201905.png",
+    "Pasted image 20241211195544.png",
+    "Pasted image 20241211192147.png",
+    "Pasted image 20241211185026.png",
     "Machine Learning Fundamentals.md"
   ]
 }
