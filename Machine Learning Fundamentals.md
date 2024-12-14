@@ -446,6 +446,7 @@ test_loader = DataLoader(test_dataset,
 
 # Instantiate model, optimizer, and hyperparameter(s)
 in_dim, feature_dim, out_dim = 784, 256, 10
+#Feel like the names _dim is a little misleading. The dimension is 2D.
 lr=1e-3
 loss_fn = nn.CrossEntropyLoss()
 epochs=40
@@ -455,8 +456,8 @@ def train(classifier=classifier,
  optimizer=optimizer,
  epochs=epochs,
  loss_fn=loss_fn):
- classifier.train()
- loss_lt = []
+	 classifier.train()
+	 loss_lt = []
  for epoch in range(epochs):
 	 running_loss = 0.0
  for minibatch in train_loader:
@@ -499,4 +500,29 @@ def test(classifier=classifier,
 		 computed_loss.item()/(len(test_loader)*64),
 		 accuracy*100.0/(len(test_loader)*64)))
 ```
+What is occurring:
+- In the class BaseClassifier, we first inherit from the nn.Module class itself. Then, we set the classifier to a sequential layering structure with the input layer having a size of 784. This is the size because each image is a 28x28 image, and $28^2$ is 784. The output of this layer has a size of 256, and it is input into a ReLU (reminder: restricted linear unit neuron) to introduced nonlinearity to the neural network so it can learn more complicated patterns. The number 256 is somewhat arbitrary for this layer. It could be higher or low, but the goal is to find a sweet spot combining accuracy with efficiency. The general idea is to have a value somewhere in-between the initial input dimension and the output dimension, so somewhere between 10 and 784. Additionally, using a power of 2 is always a good idea because it is on a computer. Finally, this goes through another linear layer with an output of 10 corresponding to the digits 0-9. 
+- Forward just returns self.classifier(x) because classifier(x) implicity calls the forward function
+#### Train Function:
+- In the train function, classifier.train() is called to indicate that the model is in training mode. 
+- Loops for every epoch. Recall an epoch is a full iteration through the training data. 
+- Then it loops through each minibatch of the data. Recall we chose minibatches to get the benefits from both gradient descent methods. 
+	- In this loop that data is first flattened from the 1st dimension of the data to the end into just 1 dimension. This changes the data from [batch_size, 1, 28, 28] to [batch_size, 784] so it can be sent through the classifier. It needs to be like this because the nn.Linear neuron expects 2d input. 
+	- out = classifier(data) passes it through the entire sequence consisting of the first linear neuron as layer 1, and ReLUe as layer 2 and another linear as layer 3. The output will be in the shape [batch_size, out_dim]
+	- computed_loss = loss_fn(out, target) calculates the loss between the model predictions and the correct labels.
+	- computed_loss.backwards: This utilizes backpropogation to calculate the gradients of the loss with respect to the model parameters
+	- optimizer.step() this actually performs the optimization using the gradients calculated earlier
+	- zero_grad just resets gradients so they don't have values from previous iterations
+	- running_loss += computed_loss.item() to get the loss for the epoch. Len 
+- The length of the train loader is the number of minibatches, so total loss has the lost for each epoch. 
+#### Test Function:
+- First classifier.eval() is called so the model is in evaluation mode. 
+- with torch.no_grad() ensures that no gradients are computed during testing. The gradients would be unneeded since we are only testing, not training. 
+- For data, target in test_loader:
+	- The data is first flattened to 2d as it was in training. 
+	- It is then passed through the classifier.
+	- _ ,  preds = out.max(dim=1) gets the largest score, aka what the model predicted the number input is. 
+	- computed_loss += loss_fn(out, target) computes the loss across the current  prediction and adds it to the total loss throughout every batch in test_loader. 
+	- accuracy += torch.sum(preds == target) gets the total number of correct predictions
+- prints accuracy divided by total dataset length for the percentage accuracy.
 
