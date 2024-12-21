@@ -52,7 +52,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "relu",
+                "query": "batch size",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -73,7 +73,8 @@
               "title": "Bookmarks"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -176,6 +177,9 @@
   },
   "active": "461409279e2e121c",
   "lastOpenFiles": [
+    "Pasted image 20241221162730.png",
+    "Pasted image 20241221161721.png",
+    "Pasted image 20241221160525.png",
     "Machine Learning Fundamentals.md",
     "Pasted image 20241212143205.png",
     "Pasted image 20241212132959.png",
@@ -184,8 +188,6 @@
     "Pasted image 20241211210410.png",
     "Pasted image 20241211204853.png",
     "Pasted image 20241211204642.png",
-    "Pasted image 20241211202925.png",
-    "Pasted image 20241211202854.png",
-    "Pasted image 20241211202600.png"
+    "Pasted image 20241211202925.png"
   ]
 }

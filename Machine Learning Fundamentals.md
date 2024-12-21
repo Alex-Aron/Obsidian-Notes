@@ -526,3 +526,41 @@ What is occurring:
 	- accuracy += torch.sum(preds == target) gets the total number of correct predictions
 - prints accuracy divided by total dataset length for the percentage accuracy.
 
+# Necessary Knowledge:
+- Shorter descriptions of each part listed in 'necessary knowledge'
+
+## Deep Learning:
+- Training: The part of the process where the model learns patterns by assigning weights, then updating them through iterations of the training data. This is the largest portion of the dataset. 
+- Validation: The validation dataset is a portion of the dataset used after a full epoch. It evaluates  the model's performance without affecting the weights. It is useful for detecting overfitting and tuning hyperparameters like the batch size or learning rate
+- Test: This dataset is utilized after training. It consists of data unused during any training, and it allows for an evaluation of the model's ability to generalize when encountering new data. This portion is crucial for ensuring the model is effective as opposed to just having weights that fit the test data. 
+
+- Forward Propagation: The process of moving the initial input data through each layer of the neural network, ending up at the output. Each layer applies some transformation. The layers can consist of a combination of linear and non-linear layers. In the example earlier, the data is passed through a linear input layer, then a nonlinear ReLU layer, and finally the linear output layer.
+- Backpropagation: This is where the gradients for each parameter are calculated, essentially informing the network how much each parameter contributes to the error. The chain rule is used to propagate the error gradients backwards through the network. The error gradient are then used to determine how the weights should be updated.
+
+- Gradient Descent: The gradients found during backpropagation point in the direction of loss reduction. Gradient descent is the process of minimizing this loss by moving in the direction of the steepest descent. By 'moving', I mean updating model parameters, specifically weights and biases. 
+- Loss Function: This is a function that gradient descent would attempt to minimize. There are many loss functions, but the general goal is to measure the difference between the expected and actual values. Two common examples are mean squared error and cross-entropy loss. The former is used for regression, and it calculates the average of the squares of the errors(expected-actual). The latter is used for classification, and it measures the performance of that classification through the similarity between the expected probability distribution and the actual probability distribution.
+- Learning Rate: This is the step size when updating weights through gradient descent. Usually .1 to .0001.
+- Batch Size: This is the number of training examples processed in an epoch. The larger the batch, the longer one iteration takes. In practice these are commonly split into mini-batches, where the data is split into smaller subsets for gradient descent. 
+
+## PyTorch:
+
+
+
+# Attention is All you Need:
+
+## Overview:
+- ![[Pasted image 20241221160525.png]]
+	- Block diagram of a transformer
+The transformer block is the area with Nx near it. It consists of the multi-head attention, the add & norm layer, the feed forward layer, and the final add & norm layer. There are two of these in the images. The first one receives keys, queries and values from the input, and the keys and values of that are input into the second transformer on the right. The queries for this transformer's attention layer come from the previous outputs. Nx indicates that there are multiple layers of this structure. 
+- Positional encoding is done so it is not invariant to the order of words in a sentence. 
+Going through:
+- Input first sent to some multi-head attention(most important part of the transformer). Already familiar with linear, softmax, feed forward. It is sent three times in this example(all 3 inputs to the multi-head attention are the same)
+- Then the input is normalized
+	- The input for the multi-head attention layer is also added to the normative layer
+- sent through a feedforward network, then normalized again. 
+![[Pasted image 20241221161721.png]]
+ - The multi-head attention layer
+	 - First the linear layer embeds the values, keys, and queries of the inputs. There is a layer corresponding to the dimensionality. The output of this is then put into the scaled dot-product attention layer. This looks like:
+	 - ![[Pasted image 20241221162730.png]]
+ - 
+ 
