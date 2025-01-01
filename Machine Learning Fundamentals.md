@@ -562,5 +562,13 @@ Going through:
  - The multi-head attention layer
 	 - First the linear layer embeds the values, keys, and queries of the inputs. There is a layer corresponding to the dimensionality. The output of this is then put into the scaled dot-product attention layer. This looks like:
 	 - ![[Pasted image 20241221162730.png]]
- - 
- 
+
+# 3blue1brown:
+
+## E1 what is a NN:
+- Neuron: Thing that holds a number between 0 and 1
+- In famous MNIST example. The image has 784 neurons in a 28 x 28 image where each neuron has a greyscale value between 0 and 1. At 1 it appears fully white, and 0 it is black
+- Activations in one layer determine activation levels in the next layer, up until the output layer
+- Why hidden layers?
+	- In this example, a number can be broken into separate 
+
